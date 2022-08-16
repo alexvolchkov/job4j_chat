@@ -1,26 +1,35 @@
 package ru.job4j.domain;
 
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import javax.persistence.*;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "person")
-public class Person {
+public class Person implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String login;
     private String password;
-    @ManyToOne
-    @JoinColumn(name = "role_id")
-    private Role role;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "person_role", joinColumns = {
+            @JoinColumn(name = "person_id", nullable = false, updatable = false)},
+            inverseJoinColumns = {
+                    @JoinColumn(name = "role_id", nullable = false, updatable = false)})
+    private Set<Role> roles = new HashSet<>();
 
     public static Person of(String login, String password, Role role) {
         Person person = new Person();
         person.login = login;
         person.password = password;
-        person.role = role;
+        person.roles.add(role);
         return person;
     }
 
@@ -40,20 +49,54 @@ public class Person {
         this.login = login;
     }
 
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
+
+    public void addRole(Role role) {
+        this.roles.add(role);
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return getRoles();
+    }
+
     public String getPassword() {
         return password;
     }
 
+    @Override
+    public String getUsername() {
+        return getLogin();
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
     }
 
     @Override

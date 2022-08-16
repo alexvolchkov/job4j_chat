@@ -6,8 +6,7 @@ create table role (
 create table person (
     id serial primary key not null,
     login varchar(2000),
-    password varchar(2000),
-    role_id int references role (id) ON DELETE SET NULL
+    password varchar(2000)
 );
 
 create table room (
@@ -22,6 +21,11 @@ create table message (
     created timestamp,
     room_id int references room (id) ON DELETE CASCADE,
     person_id int references person (id) ON DELETE CASCADE
+);
+
+create table if not exists person_role (
+  person_id int not null references person (id),
+  role_id int not null references role (id)
 );
 
 insert into role (name) values ('ROLE_ADMIN');

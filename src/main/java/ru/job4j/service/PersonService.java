@@ -1,5 +1,8 @@
 package ru.job4j.service;
 
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import ru.job4j.domain.Role;
 import ru.job4j.exception.PersonAlreadyExistException;
@@ -11,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class PersonService {
+public class PersonService implements UserDetailsService {
     private final PersonRepository persons;
     private final RoleService roles;
 
@@ -31,7 +34,7 @@ public class PersonService {
             throw new PersonAlreadyExistException("Пользоватеь уже существует с таким именем");
         }
         Role role = roles.findByName("ROLE_USER").get();
-        person.setRole(role);
+        person.addRole(role);
         return persons.save(person);
     }
 
@@ -41,5 +44,15 @@ public class PersonService {
 
     public Optional<Person> findById(int id) {
         return persons.findById(id);
+    }
+
+    public Optional<Person> findByLogin(String login) {
+        return persons.findByLogin(login);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return persons.findByLogin(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Username does not exist"));
     }
 }
