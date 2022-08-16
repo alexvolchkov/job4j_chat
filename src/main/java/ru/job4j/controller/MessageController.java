@@ -3,6 +3,7 @@ package ru.job4j.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.domain.Message;
 import ru.job4j.domain.Person;
 import ru.job4j.domain.Room;
@@ -34,29 +35,39 @@ public class MessageController {
     @GetMapping("/{id}")
     public ResponseEntity<Message> findById(@PathVariable int id) {
         var message = messages.findById(id);
+        if (message.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    String.format("Сообщения с ID %s не найдено", id));
+        }
         return new ResponseEntity<>(
-                message.orElse(new Message()),
-                message.isPresent() ? HttpStatus.OK : HttpStatus.NOT_FOUND
-        );
+                message.get(), HttpStatus.OK);
     }
 
     @PostMapping("/{roomId}")
     public ResponseEntity<Message> create(@RequestBody Message message, @PathVariable int roomId) {
-        var rsl = ResponseEntity.badRequest().body(new Message());
+        if (message == null || message.getPerson() == null) {
+            throw new NullPointerException();
+        }
         Optional<Room> room = rooms.findById(roomId);
         Optional<Person> person = persons.findById(message.getPerson().getId());
-        if (room.isPresent() && person.isPresent()) {
-            message.setRoom(room.get());
-            rsl = new ResponseEntity<>(
-                    messages.save(message),
-                    HttpStatus.CREATED
-            );
+        if (room.isEmpty() || person.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Комната или пользователь не найден");
         }
-        return rsl;
+        message.setRoom(room.get());
+        return new ResponseEntity<>(
+                messages.save(message),
+                HttpStatus.CREATED
+        );
     }
 
     @PutMapping("/")
     public ResponseEntity<Void> update(@RequestBody Message message) {
+        if (message == null) {
+            throw new NullPointerException();
+        }
         messages.save(message);
         return ResponseEntity.ok().build();
     }

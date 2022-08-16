@@ -31,7 +31,8 @@ public class PersonService implements UserDetailsService {
 
     public Person save(Person person) throws PersonAlreadyExistException {
         if (persons.findByLogin(person.getLogin()).isPresent()) {
-            throw new PersonAlreadyExistException("Пользоватеь уже существует с таким именем");
+            throw new PersonAlreadyExistException(
+                    String.format("Пользоватеь уже существует с именем %s", person.getLogin()));
         }
         Role role = roles.findByName("ROLE_USER").get();
         person.addRole(role);
