@@ -2,6 +2,7 @@ package ru.job4j.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.domain.Message;
@@ -10,7 +11,9 @@ import ru.job4j.domain.Room;
 import ru.job4j.service.MessageService;
 import ru.job4j.service.PersonService;
 import ru.job4j.service.RoomService;
+import ru.job4j.validation.Operation;
 
+import javax.validation.Valid;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -48,6 +51,7 @@ public class MessageController {
     }
 
     @PostMapping("/{roomId}")
+    @Validated(Operation.OnCreate.class)
     public ResponseEntity<Message> create(@RequestBody Message message, @PathVariable int roomId) {
         if (message == null || message.getPerson() == null) {
             throw new NullPointerException();
@@ -67,7 +71,8 @@ public class MessageController {
     }
 
     @PutMapping("/")
-    public ResponseEntity<Void> update(@RequestBody Message message) {
+    @Validated(Operation.OnUpdate.class)
+    public ResponseEntity<Void> update(@Valid @RequestBody Message message) {
         if (message == null) {
             throw new NullPointerException();
         }

@@ -1,8 +1,11 @@
 package ru.job4j.domain;
 
 import org.springframework.security.core.GrantedAuthority;
+import ru.job4j.validation.Operation;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.Objects;
 
 @Entity
@@ -10,7 +13,10 @@ import java.util.Objects;
 public class Role implements GrantedAuthority {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @NotNull(message = "Id must be non null",
+            groups = {Operation.OnUpdate.class, Operation.OnDelete.class})
     private int id;
+    @NotBlank(message = "Name must be not empty")
     private String name;
 
     public int getId() {

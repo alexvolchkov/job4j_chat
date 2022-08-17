@@ -2,8 +2,12 @@ package ru.job4j.domain;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import ru.job4j.validation.Operation;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -15,8 +19,12 @@ public class Person implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @NotNull(message = "Id must be non null",
+            groups = {Operation.OnUpdate.class, Operation.OnDelete.class})
     private int id;
+    @NotBlank(message = "Login must be not empty")
     private String login;
+    @Size(min = 3, message = "Password должен быть не менее 3 символов")
     private String password;
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "person_role", joinColumns = {
