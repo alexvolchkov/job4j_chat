@@ -9,6 +9,9 @@ import ru.job4j.domain.Room;
 import ru.job4j.service.MessageService;
 import ru.job4j.service.RoomService;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -70,5 +73,41 @@ public class RoomController {
         room.setId(id);
         rooms.delete(room);
         return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/")
+    public ResponseEntity<Room> patchRoom(@RequestBody Room room) throws InvocationTargetException, IllegalAccessException {
+        var optionalCurrent = rooms.findById(room.getId());
+        if (optionalCurrent.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        var current = optionalCurrent.get();
+        var methods = current.getClass().getDeclaredMethods();
+        var namePerMethod = new HashMap<String, Method>();
+        for (var method : methods) {
+            var name = method.getName();
+            if (name.startsWith("get") || name.startsWith("set")) {
+                namePerMethod.put(name, method);
+            }
+        }
+        for (var name : namePerMethod.keySet()) {
+            if (name.startsWith("get")) {
+                var getMethod = namePerMethod.get(name);
+                var setMethod = namePerMethod.get(name.replace("get", "set"));
+                if (setMethod == null) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Impossible invoke set method from object : " + current + ", Check set and get pairs.");
+
+                }
+                var newValue = getMethod.invoke(room);
+                if (newValue != null) {
+                    setMethod.invoke(current, newValue);
+                }
+            }
+        }
+        rooms.save(current);
+        return new ResponseEntity<>(
+                current, HttpStatus.OK
+        );
     }
 }

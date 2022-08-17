@@ -13,6 +13,8 @@ import ru.job4j.service.PersonService;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 
@@ -88,5 +90,44 @@ public class PersonController {
             put("message", exception.getMessage());
             put("type", exception.getClass());
         }}));
+    }
+
+    @PatchMapping("/")
+    public ResponseEntity<Person> patchMessage(@RequestBody Person person)
+            throws InvocationTargetException, IllegalAccessException, PersonAlreadyExistException {
+        var optionalCurrent = persons.findById(person.getId());
+        if (optionalCurrent.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        var current = optionalCurrent.get();
+        var methods = current.getClass().getDeclaredMethods();
+        var namePerMethod = new HashMap<String, Method>();
+        for (var method : methods) {
+            var name = method.getName();
+            if (name.startsWith("get") || name.startsWith("set")) {
+                namePerMethod.put(name, method);
+            }
+        }
+        for (var name : namePerMethod.keySet()) {
+            if (name.startsWith("get")) {
+                var getMethod = namePerMethod.get(name);
+                var setMethod = namePerMethod.get(name.replace("get", "set"));
+                if (setMethod == null) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Impossible invoke set method from object : " + current + ", Check set and get pairs.");
+
+                }
+                var newValue = getMethod.invoke(person);
+                if (newValue != null && name.equals("getPassword")) {
+                    setMethod.invoke(current, encoder.encode((String) newValue));
+                } else if (newValue != null) {
+                    setMethod.invoke(current, newValue);
+                }
+            }
+        }
+        persons.save(current);
+        return new ResponseEntity<>(
+                current, HttpStatus.OK
+        );
     }
 }

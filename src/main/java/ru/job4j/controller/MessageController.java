@@ -11,6 +11,9 @@ import ru.job4j.service.MessageService;
 import ru.job4j.service.PersonService;
 import ru.job4j.service.RoomService;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -78,5 +81,42 @@ public class MessageController {
         message.setId(id);
         messages.delete(message);
         return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/")
+    public ResponseEntity<Message> patchMessage(@RequestBody Message message)
+            throws InvocationTargetException, IllegalAccessException {
+        var optionalCurrent = messages.findById(message.getId());
+        if (optionalCurrent.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        var current = optionalCurrent.get();
+        var methods = current.getClass().getDeclaredMethods();
+        var namePerMethod = new HashMap<String, Method>();
+        for (var method : methods) {
+            var name = method.getName();
+            if (name.startsWith("get") || name.startsWith("set")) {
+                namePerMethod.put(name, method);
+            }
+        }
+        for (var name : namePerMethod.keySet()) {
+            if (name.startsWith("get")) {
+                var getMethod = namePerMethod.get(name);
+                var setMethod = namePerMethod.get(name.replace("get", "set"));
+                if (setMethod == null) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Impossible invoke set method from object : " + current + ", Check set and get pairs.");
+
+                }
+                var newValue = getMethod.invoke(message);
+                if (newValue != null) {
+                    setMethod.invoke(current, newValue);
+                }
+            }
+        }
+        messages.save(current);
+        return new ResponseEntity<>(
+                current, HttpStatus.OK
+        );
     }
 }
