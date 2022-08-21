@@ -28,7 +28,8 @@ create table if not exists person_role (
   role_id int not null references role (id)
 );
 
-insert into role (name) values ('ROLE_ADMIN');
-insert into role (name) values ('ROLE_USER');
-insert into person (login, password, role_id) values ('ban', '123', 1);
-insert into person (login, password, role_id) values ('ivan', '123', 2);
+create table if not exists room_person (
+  person_id int not null references person (id),
+  room_id int not null references room (id)
+);
+

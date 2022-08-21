@@ -7,7 +7,9 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PastOrPresent;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
 @Table(name = "room")
@@ -19,8 +21,15 @@ public class Room {
     private int id;
     @NotBlank(message = "Name must be not empty")
     private String name;
-    @PastOrPresent(message = "Created не должна быть будующей датой")
-    private LocalDateTime created = LocalDateTime.now();
+    //@PastOrPresent(message = "Created не должна быть будующей датой")
+    private Timestamp  created = new Timestamp(System.currentTimeMillis());
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "room_person", joinColumns = {
+            @JoinColumn(name = "room_id", nullable = false, updatable = false)},
+    inverseJoinColumns = {
+            @JoinColumn(name = "person_id", nullable = false, updatable = false)})
+    private Set<Person> persons;
 
     public int getId() {
         return id;
@@ -38,12 +47,23 @@ public class Room {
         this.name = name;
     }
 
-    public LocalDateTime getCreated() {
+    public Timestamp getCreated() {
         return created;
     }
 
-    public void setCreated(LocalDateTime created) {
+    public void setCreated(Timestamp created) {
         this.created = created;
     }
 
+    public Set<Person> getPersons() {
+        return persons;
+    }
+
+    public void setPersons(Set<Person> persons) {
+        this.persons = persons;
+    }
+
+    public void addPerson(Person person) {
+        this.persons.add(person);
+    }
 }

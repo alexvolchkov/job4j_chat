@@ -6,6 +6,10 @@
 
 Будет использован  REST Api через Spring Boot.
 
+Технологии проекта: Spring boot, Spring data, JWT.
+Сборка проекта производится командой "mvn package".
+Запуск проекта производится командой "java -jar job4j_chat-0.0.1-SNAPSHOT.jar"
+
 API:
 
 GET /person/ - получить список пользователей.

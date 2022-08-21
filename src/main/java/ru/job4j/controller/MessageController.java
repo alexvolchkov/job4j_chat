@@ -52,7 +52,8 @@ public class MessageController {
 
     @PostMapping("/{roomId}")
     @Validated(Operation.OnCreate.class)
-    public ResponseEntity<Message> create(@RequestBody Message message, @PathVariable int roomId) {
+    public ResponseEntity<Message> create(@RequestBody Message message,
+                                          @PathVariable(name = "roomId") int roomId) {
         if (message == null || message.getPerson() == null) {
             throw new NullPointerException();
         }
@@ -62,6 +63,11 @@ public class MessageController {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "Комната или пользователь не найден");
+        }
+        if (!room.get().getPersons().contains(person.get())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Пользователь не зарегистрирован в комнате");
         }
         message.setRoom(room.get());
         return new ResponseEntity<>(

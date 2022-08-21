@@ -8,6 +8,7 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.domain.Message;
 import ru.job4j.domain.Room;
 import ru.job4j.service.MessageService;
+import ru.job4j.service.PersonService;
 import ru.job4j.service.RoomService;
 import ru.job4j.validation.Operation;
 
@@ -22,10 +23,12 @@ import java.util.List;
 public class RoomController {
     private final RoomService rooms;
     private final MessageService messages;
+    private final PersonService persons;
 
-    public RoomController(RoomService rooms, MessageService messages) {
+    public RoomController(RoomService rooms, MessageService messages, PersonService persons) {
         this.rooms = rooms;
         this.messages = messages;
+        this.persons = persons;
     }
 
     @GetMapping("/")
@@ -60,6 +63,36 @@ public class RoomController {
                 rooms.save(room),
                 HttpStatus.CREATED
         );
+    }
+
+    @PostMapping("/{roomId}/addPerson/{personId}")
+    public ResponseEntity<Room> addPerson(@PathVariable(name = "roomId") int roomId,
+                                          @PathVariable(name = "personId") int personId) {
+        var optRoom = rooms.findById(roomId);
+        var optPerson = persons.findById(personId);
+        if (optRoom.isEmpty() || optPerson.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        var room = optRoom.get();
+        room.addPerson(optPerson.get());
+        return new ResponseEntity<>(
+                rooms.save(room),
+                HttpStatus.OK
+        );
+    }
+
+    @DeleteMapping("/{roomId}/addPerson/{personId}")
+    public ResponseEntity<Void> deletePerson(@PathVariable(name = "roomId") int roomId,
+                                          @PathVariable(name = "personId") int personId) {
+        var optRoom = rooms.findById(roomId);
+        var optPerson = persons.findById(personId);
+        if (optRoom.isEmpty() || optPerson.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        var room = optRoom.get();
+        room.getPersons().remove(optPerson.get());
+        rooms.save(room);
+        return  ResponseEntity.ok().build();
     }
 
     @PutMapping("/")
