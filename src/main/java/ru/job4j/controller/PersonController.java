@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.domain.Person;
 import ru.job4j.exception.PersonAlreadyExistException;
 import ru.job4j.service.PersonService;
@@ -17,7 +16,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 
@@ -27,11 +25,16 @@ public class PersonController {
     private final PersonService persons;
     private final BCryptPasswordEncoder encoder;
     private final ObjectMapper objectMapper;
+    private final ModelMapper modelMapper;
 
-    public PersonController(PersonService persons, BCryptPasswordEncoder encoder, ObjectMapper objectMapper) {
+    public PersonController(PersonService persons,
+                            BCryptPasswordEncoder encoder,
+                            ObjectMapper objectMapper,
+                            ModelMapper modelMapper) {
         this.persons = persons;
         this.encoder = encoder;
         this.objectMapper = objectMapper;
+        this.modelMapper = modelMapper;
     }
 
     @GetMapping("/")
@@ -90,31 +93,7 @@ public class PersonController {
     public ResponseEntity<Person> patchMessage(@RequestBody Person person)
             throws InvocationTargetException, IllegalAccessException, PersonAlreadyExistException {
         var current = persons.findById(person.getId());
-        var methods = current.getClass().getDeclaredMethods();
-        var namePerMethod = new HashMap<String, Method>();
-        for (var method : methods) {
-            var name = method.getName();
-            if (name.startsWith("get") || name.startsWith("set")) {
-                namePerMethod.put(name, method);
-            }
-        }
-        for (var name : namePerMethod.keySet()) {
-            if (name.startsWith("get")) {
-                var getMethod = namePerMethod.get(name);
-                var setMethod = namePerMethod.get(name.replace("get", "set"));
-                if (setMethod == null) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            "Impossible invoke set method from object : " + current + ", Check set and get pairs.");
-
-                }
-                var newValue = getMethod.invoke(person);
-                if (newValue != null && name.equals("getPassword")) {
-                    setMethod.invoke(current, encoder.encode((String) newValue));
-                } else if (newValue != null) {
-                    setMethod.invoke(current, newValue);
-                }
-            }
-        }
+        modelMapper.map(person, current);
         persons.save(current);
         return new ResponseEntity<>(
                 current, HttpStatus.OK

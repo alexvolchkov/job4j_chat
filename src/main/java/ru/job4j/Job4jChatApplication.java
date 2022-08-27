@@ -5,6 +5,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import ru.job4j.controller.ModelMapper;
+import ru.job4j.controller.SimpleModelMapper;
 
 @SpringBootApplication
 public class Job4jChatApplication {
@@ -23,4 +25,8 @@ public class Job4jChatApplication {
         return new ObjectMapper();
     }
 
+    @Bean
+    public ModelMapper modelMapper() {
+        return new SimpleModelMapper();
+    }
 }

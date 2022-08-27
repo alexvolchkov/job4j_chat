@@ -13,8 +13,6 @@ import ru.job4j.validation.Operation;
 
 import javax.validation.Valid;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -23,11 +21,16 @@ public class MessageController {
     private final MessageService messages;
     private final RoomService rooms;
     private final PersonService persons;
+    private final ModelMapper modelMapper;
 
-    public MessageController(MessageService messages, RoomService rooms, PersonService persons) {
+    public MessageController(MessageService messages,
+                             RoomService rooms,
+                             PersonService persons,
+                             ModelMapper modelMapper) {
         this.messages = messages;
         this.rooms = rooms;
         this.persons = persons;
+        this.modelMapper = modelMapper;
     }
 
     @GetMapping("/")
@@ -82,29 +85,7 @@ public class MessageController {
     public ResponseEntity<Message> patchMessage(@RequestBody Message message)
             throws InvocationTargetException, IllegalAccessException {
         var messageDB = messages.findById(message.getId());
-        var methods = messageDB.getClass().getDeclaredMethods();
-        var namePerMethod = new HashMap<String, Method>();
-        for (var method : methods) {
-            var name = method.getName();
-            if (name.startsWith("get") || name.startsWith("set")) {
-                namePerMethod.put(name, method);
-            }
-        }
-        for (var name : namePerMethod.keySet()) {
-            if (name.startsWith("get")) {
-                var getMethod = namePerMethod.get(name);
-                var setMethod = namePerMethod.get(name.replace("get", "set"));
-                if (setMethod == null) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            "Impossible invoke set method from object : " + messageDB + ", Check set and get pairs.");
-
-                }
-                var newValue = getMethod.invoke(message);
-                if (newValue != null) {
-                    setMethod.invoke(messageDB, newValue);
-                }
-            }
-        }
+        modelMapper.map(message, messageDB);
         messages.save(messageDB);
         return new ResponseEntity<>(
                 messageDB, HttpStatus.OK

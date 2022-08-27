@@ -4,7 +4,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.domain.Message;
 import ru.job4j.domain.Room;
 import ru.job4j.service.MessageService;
@@ -14,8 +13,6 @@ import ru.job4j.validation.Operation;
 
 import javax.validation.Valid;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -24,11 +21,16 @@ public class RoomController {
     private final RoomService rooms;
     private final MessageService messages;
     private final PersonService persons;
+    private final ModelMapper modelMapper;
 
-    public RoomController(RoomService rooms, MessageService messages, PersonService persons) {
+    public RoomController(RoomService rooms,
+                          MessageService messages,
+                          PersonService persons,
+                          ModelMapper modelMapper) {
         this.rooms = rooms;
         this.messages = messages;
         this.persons = persons;
+        this.modelMapper = modelMapper;
     }
 
     @GetMapping("/")
@@ -97,29 +99,7 @@ public class RoomController {
     @PatchMapping("/")
     public ResponseEntity<Room> patchRoom(@RequestBody Room room) throws InvocationTargetException, IllegalAccessException {
         var current = rooms.findById(room.getId());
-        var methods = current.getClass().getDeclaredMethods();
-        var namePerMethod = new HashMap<String, Method>();
-        for (var method : methods) {
-            var name = method.getName();
-            if (name.startsWith("get") || name.startsWith("set")) {
-                namePerMethod.put(name, method);
-            }
-        }
-        for (var name : namePerMethod.keySet()) {
-            if (name.startsWith("get")) {
-                var getMethod = namePerMethod.get(name);
-                var setMethod = namePerMethod.get(name.replace("get", "set"));
-                if (setMethod == null) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            "Impossible invoke set method from object : " + current + ", Check set and get pairs.");
-
-                }
-                var newValue = getMethod.invoke(room);
-                if (newValue != null) {
-                    setMethod.invoke(current, newValue);
-                }
-            }
-        }
+        modelMapper.map(room, current);
         rooms.save(current);
         return new ResponseEntity<>(
                 current, HttpStatus.OK
