@@ -3,12 +3,8 @@ package ru.job4j.domain;
 import ru.job4j.validation.Operation;
 
 import javax.persistence.*;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.PastOrPresent;
+import javax.validation.constraints.*;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity
@@ -16,15 +12,14 @@ import java.util.Set;
 public class Room {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @NotNull(message = "Id must be non null",
+    @Positive(message = "Id должно быть больше 0",
             groups = {Operation.OnUpdate.class, Operation.OnDelete.class})
     private int id;
-    @NotBlank(message = "Name must be not empty")
+    @NotBlank(message = "Name должен быть не пустым")
     private String name;
-    //@PastOrPresent(message = "Created не должна быть будующей датой")
     private Timestamp  created = new Timestamp(System.currentTimeMillis());
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "room_person", joinColumns = {
             @JoinColumn(name = "room_id", nullable = false, updatable = false)},
     inverseJoinColumns = {

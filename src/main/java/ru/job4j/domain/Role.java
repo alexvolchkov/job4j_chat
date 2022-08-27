@@ -5,7 +5,7 @@ import ru.job4j.validation.Operation;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
 import java.util.Objects;
 
 @Entity
@@ -13,10 +13,10 @@ import java.util.Objects;
 public class Role implements GrantedAuthority {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @NotNull(message = "Id must be non null",
+    @Positive(message = "Id должно быть больше 0",
             groups = {Operation.OnUpdate.class, Operation.OnDelete.class})
     private int id;
-    @NotBlank(message = "Name must be not empty")
+    @NotBlank(message = "Name должен быть не пустым")
     private String name;
 
     public int getId() {

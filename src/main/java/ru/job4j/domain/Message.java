@@ -3,7 +3,7 @@ package ru.job4j.domain;
 import ru.job4j.validation.Operation;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -12,7 +12,7 @@ import java.util.Objects;
 public class Message {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @NotNull(message = "Id must be non null",
+    @Positive(message = "Id должно быть больше 0",
             groups = {Operation.OnUpdate.class, Operation.OnDelete.class})
     private int id;
     private String body;

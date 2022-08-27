@@ -1,26 +1,26 @@
 create table role (
     id serial primary key not null,
-    name varchar(2000)
+    name text
 );
 
 create table person (
     id serial primary key not null,
-    login varchar(2000),
-    password varchar(2000)
+    login text,
+    password text
 );
 
 create table room (
     id serial primary key not null,
-    name varchar(2000),
+    name text,
     created timestamp
 );
 
 create table message (
     id serial primary key not null,
-    body varchar,
+    body text,
     created timestamp,
-    room_id int references room (id) ON DELETE CASCADE,
-    person_id int references person (id) ON DELETE CASCADE
+    room_id int references room (id),
+    person_id int references person (id)
 );
 
 create table if not exists person_role (

@@ -6,7 +6,7 @@ import ru.job4j.validation.Operation;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.util.Collection;
 import java.util.HashSet;
@@ -19,14 +19,14 @@ public class Person implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @NotNull(message = "Id must be non null",
+    @Positive(message = "Id должно быть больше 0",
             groups = {Operation.OnUpdate.class, Operation.OnDelete.class})
     private int id;
-    @NotBlank(message = "Login must be not empty")
+    @NotBlank(message = "Login должен быть не пустым")
     private String login;
     @Size(min = 3, message = "Password должен быть не менее 3 символов")
     private String password;
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "person_role", joinColumns = {
             @JoinColumn(name = "person_id", nullable = false, updatable = false)},
             inverseJoinColumns = {
