@@ -26,7 +26,7 @@ public class Person implements UserDetails {
     private String login;
     @Size(min = 3, message = "Password должен быть не менее 3 символов")
     private String password;
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "person_role", joinColumns = {
             @JoinColumn(name = "person_id", nullable = false, updatable = false)},
             inverseJoinColumns = {
