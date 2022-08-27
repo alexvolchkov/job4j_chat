@@ -6,8 +6,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.domain.Message;
-import ru.job4j.domain.Person;
-import ru.job4j.domain.Room;
 import ru.job4j.service.MessageService;
 import ru.job4j.service.PersonService;
 import ru.job4j.service.RoomService;
@@ -18,7 +16,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("message")
@@ -41,35 +38,25 @@ public class MessageController {
     @GetMapping("/{id}")
     public ResponseEntity<Message> findById(@PathVariable int id) {
         var message = messages.findById(id);
-        if (message.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    String.format("Сообщения с ID %s не найдено", id));
-        }
         return new ResponseEntity<>(
-                message.get(), HttpStatus.OK);
+                message, HttpStatus.OK);
     }
 
     @PostMapping("/{roomId}")
     @Validated(Operation.OnCreate.class)
     public ResponseEntity<Message> create(@RequestBody Message message,
                                           @PathVariable(name = "roomId") int roomId) {
-        if (message == null || message.getPerson() == null) {
+        if (message.getPerson() == null) {
             throw new NullPointerException();
         }
-        Optional<Room> room = rooms.findById(roomId);
-        Optional<Person> person = persons.findById(message.getPerson().getId());
-        if (room.isEmpty() || person.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Комната или пользователь не найден");
-        }
-        if (!room.get().getPersons().contains(person.get())) {
+        var room = rooms.findById(roomId);
+        var person = persons.findById(message.getPerson().getId());
+        if (!room.getPersons().contains(person)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Пользователь не зарегистрирован в комнате");
         }
-        message.setRoom(room.get());
+        message.setRoom(room);
         return new ResponseEntity<>(
                 messages.save(message),
                 HttpStatus.CREATED
@@ -79,9 +66,6 @@ public class MessageController {
     @PutMapping("/")
     @Validated(Operation.OnUpdate.class)
     public ResponseEntity<Void> update(@Valid @RequestBody Message message) {
-        if (message == null) {
-            throw new NullPointerException();
-        }
         messages.save(message);
         return ResponseEntity.ok().build();
     }
@@ -97,12 +81,8 @@ public class MessageController {
     @PatchMapping("/")
     public ResponseEntity<Message> patchMessage(@RequestBody Message message)
             throws InvocationTargetException, IllegalAccessException {
-        var optionalCurrent = messages.findById(message.getId());
-        if (optionalCurrent.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        var current = optionalCurrent.get();
-        var methods = current.getClass().getDeclaredMethods();
+        var messageDB = messages.findById(message.getId());
+        var methods = messageDB.getClass().getDeclaredMethods();
         var namePerMethod = new HashMap<String, Method>();
         for (var method : methods) {
             var name = method.getName();
@@ -116,18 +96,18 @@ public class MessageController {
                 var setMethod = namePerMethod.get(name.replace("get", "set"));
                 if (setMethod == null) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            "Impossible invoke set method from object : " + current + ", Check set and get pairs.");
+                            "Impossible invoke set method from object : " + messageDB + ", Check set and get pairs.");
 
                 }
                 var newValue = getMethod.invoke(message);
                 if (newValue != null) {
-                    setMethod.invoke(current, newValue);
+                    setMethod.invoke(messageDB, newValue);
                 }
             }
         }
-        messages.save(current);
+        messages.save(messageDB);
         return new ResponseEntity<>(
-                current, HttpStatus.OK
+                messageDB, HttpStatus.OK
         );
     }
 }

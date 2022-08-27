@@ -6,7 +6,7 @@ import ru.job4j.repository.RoomRepository;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.NoSuchElementException;
 
 @Service
 public class RoomService {
@@ -22,8 +22,13 @@ public class RoomService {
         return rsl;
     }
 
-    public Optional<Room> findById(int id) {
-        return rooms.findById(id);
+    public Room findById(int id) {
+        var room = rooms.findById(id);
+        if (room.isEmpty()) {
+            throw new NoSuchElementException(
+                    String.format("Комната с ID %s не найдена", id));
+        }
+        return room.get();
     }
 
     public Room save(Room room) {

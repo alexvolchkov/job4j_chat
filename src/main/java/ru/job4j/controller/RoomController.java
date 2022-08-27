@@ -39,13 +39,8 @@ public class RoomController {
     @GetMapping("/{id}")
     public ResponseEntity<Room> findById(@PathVariable int id) {
         var room = this.rooms.findById(id);
-        if (room.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    String.format("Комната с ID %s не найдена", id));
-        }
         return new ResponseEntity<>(
-                room.get(), HttpStatus.OK);
+                room, HttpStatus.OK);
     }
 
     @GetMapping("/{id}/messsages")
@@ -56,9 +51,6 @@ public class RoomController {
     @PostMapping("/")
     @Validated(Operation.OnCreate.class)
     public ResponseEntity<Room> create(@Valid @RequestBody Room room) {
-        if (room == null) {
-            throw new NullPointerException();
-        }
         return new ResponseEntity<>(
                 rooms.save(room),
                 HttpStatus.CREATED
@@ -68,13 +60,9 @@ public class RoomController {
     @PostMapping("/{roomId}/addPerson/{personId}")
     public ResponseEntity<Room> addPerson(@PathVariable(name = "roomId") int roomId,
                                           @PathVariable(name = "personId") int personId) {
-        var optRoom = rooms.findById(roomId);
-        var optPerson = persons.findById(personId);
-        if (optRoom.isEmpty() || optPerson.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        var room = optRoom.get();
-        room.addPerson(optPerson.get());
+        var room = rooms.findById(roomId);
+        var person = persons.findById(personId);
+        room.addPerson(person);
         return new ResponseEntity<>(
                 rooms.save(room),
                 HttpStatus.OK
@@ -84,13 +72,9 @@ public class RoomController {
     @DeleteMapping("/{roomId}/addPerson/{personId}")
     public ResponseEntity<Void> deletePerson(@PathVariable(name = "roomId") int roomId,
                                           @PathVariable(name = "personId") int personId) {
-        var optRoom = rooms.findById(roomId);
-        var optPerson = persons.findById(personId);
-        if (optRoom.isEmpty() || optPerson.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        var room = optRoom.get();
-        room.getPersons().remove(optPerson.get());
+        var room = rooms.findById(roomId);
+        var person = persons.findById(personId);
+        room.getPersons().remove(person);
         rooms.save(room);
         return  ResponseEntity.ok().build();
     }
@@ -98,9 +82,6 @@ public class RoomController {
     @PutMapping("/")
     @Validated(Operation.OnUpdate.class)
     public ResponseEntity<Void> update(@Valid @RequestBody Room room) {
-        if (room == null) {
-            throw new NullPointerException();
-        }
         rooms.save(room);
         return ResponseEntity.ok().build();
     }
@@ -115,11 +96,7 @@ public class RoomController {
 
     @PatchMapping("/")
     public ResponseEntity<Room> patchRoom(@RequestBody Room room) throws InvocationTargetException, IllegalAccessException {
-        var optionalCurrent = rooms.findById(room.getId());
-        if (optionalCurrent.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        var current = optionalCurrent.get();
+        var current = rooms.findById(room.getId());
         var methods = current.getClass().getDeclaredMethods();
         var namePerMethod = new HashMap<String, Method>();
         for (var method : methods) {

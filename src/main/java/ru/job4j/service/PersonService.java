@@ -11,6 +11,7 @@ import ru.job4j.domain.Person;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
@@ -43,8 +44,13 @@ public class PersonService implements UserDetailsService {
         persons.delete(person);
     }
 
-    public Optional<Person> findById(int id) {
-        return persons.findById(id);
+    public Person findById(int id) {
+        var person = persons.findById(id);
+        if (person.isEmpty()) {
+            throw new NoSuchElementException(
+                    String.format("Пользователь с ID %s не найден", id));
+        }
+        return person.get();
     }
 
     public Optional<Person> findByLogin(String login) {

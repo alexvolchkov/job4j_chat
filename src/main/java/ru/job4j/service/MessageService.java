@@ -6,7 +6,7 @@ import ru.job4j.repository.MessageRepository;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.NoSuchElementException;
 
 @Service
 public class MessageService {
@@ -22,8 +22,12 @@ public class MessageService {
         return rsl;
     }
 
-    public Optional<Message> findById(int id) {
-        return messages.findById(id);
+    public Message findById(int id) {
+        var message = messages.findById(id);
+        if (message.isEmpty()) {
+            throw new NoSuchElementException(String.format("Сообщения с ID %s не найдено", id));
+        }
+        return message.get();
     }
 
     public List<Message> findAllByRoom_Id(int id) {

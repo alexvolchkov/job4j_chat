@@ -45,21 +45,13 @@ public class PersonController {
     @GetMapping("/{id}")
     public ResponseEntity<Person> findById(@PathVariable int id) {
         var person = this.persons.findById(id);
-        if (person.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    String.format("Пользователь с ID %s не найден", id));
-        }
         return new ResponseEntity<>(
-                person.get(), HttpStatus.OK);
+                person, HttpStatus.OK);
     }
 
     @PostMapping("/sign-up")
     @Validated(Operation.OnCreate.class)
     public ResponseEntity<Person> create(@Valid @RequestBody Person person) throws PersonAlreadyExistException {
-        if (person == null) {
-            throw new NullPointerException();
-        }
         person.setPassword(encoder.encode(person.getPassword()));
         return new ResponseEntity<>(
                 persons.save(person),
@@ -70,9 +62,6 @@ public class PersonController {
     @PutMapping("/")
     @Validated(Operation.OnUpdate.class)
     public ResponseEntity<Void> update(@Valid @RequestBody Person person) throws PersonAlreadyExistException {
-        if (person == null) {
-            throw new NullPointerException();
-        }
         this.persons.save(person);
             return ResponseEntity.ok().build();
     }
@@ -100,11 +89,7 @@ public class PersonController {
     @PatchMapping("/")
     public ResponseEntity<Person> patchMessage(@RequestBody Person person)
             throws InvocationTargetException, IllegalAccessException, PersonAlreadyExistException {
-        var optionalCurrent = persons.findById(person.getId());
-        if (optionalCurrent.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        var current = optionalCurrent.get();
+        var current = persons.findById(person.getId());
         var methods = current.getClass().getDeclaredMethods();
         var namePerMethod = new HashMap<String, Method>();
         for (var method : methods) {
